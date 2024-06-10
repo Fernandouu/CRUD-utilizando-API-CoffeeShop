@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 
 const HomeScreen = ({ logueado, setLogueado }) => {
-  let ip = `192.168.0.13`;
+  let ip = ` 192.168.0.2`;
   const url = `http://${ip}/coffeeshop/api/services/admin/administrador.php?action=logOut`;
   const handleLogOut = async ()=>{
 

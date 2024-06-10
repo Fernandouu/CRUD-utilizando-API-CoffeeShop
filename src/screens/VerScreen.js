@@ -1,24 +1,38 @@
-// VerScreen.js
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Text, Alert } from 'react-native';
 import UserCard from '../components/cards';
+import ModalUser from '../components/ModalUser';
 
 // IP del servidor 
-let ip = `192.168.0.13`;
+let ip = `192.168.0.2`;
 
 const VerScreen = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [modalType, setModalType] = useState('edit');
+    const [nombre, setNombre] = useState('');
+    const [apellido, setApellido] = useState('');
+    const [correo, setCorreo] = useState('');
+    const [alias, setAlias] = useState('');
+    const [clave, setClave] = useState('');
+    const [confirmarClave, setConfirmarClave] = useState('');
 
     useEffect(() => {
+        fetchUsuarios();
+    }, []);
+
+    const fetchUsuarios = () => {
+        setLoading(true);
         fetch(`http://${ip}/coffeeshop/api/services/admin/administrador.php?action=readAll`)
             .then(response => response.json())
             .then(data => {
-                console.log("Datos recibidos del servidor:", data); // Verifica la estructura de los datos recibidos
+                console.log("Datos recibidos del servidor:", data);
                 if (data.status === 1 && Array.isArray(data.dataset)) {
-                    setUsers(data.dataset);  // Establece users solo si data.dataset es un arreglo
+                    setUsers(data.dataset);
                 } else {
-                    setUsers([]);  // Si no hay usuarios o la estructura no es la esperada, setea el estado a un arreglo vacío
+                    setUsers([]);
                     console.error('Datos no están en el formato esperado:', data);
                 }
                 setLoading(false);
@@ -26,10 +40,73 @@ const VerScreen = () => {
             .catch(error => {
                 console.error("Error al cargar los datos:", error);
                 setLoading(false);
-                setUsers([]);  // En caso de error, asegura que users es un arreglo vacío
+                setUsers([]);
             });
-    }, []);
+    };
 
+    const openModal = (user) => {
+        setNombre(user.nombre_administrador);
+        setApellido(user.apellido_administrador);
+        setCorreo(user.correo_administrador);
+        setAlias(user.alias_administrador || '');  // Asegúrate de tener el alias si está disponible
+        setSelectedUser(user);
+        setModalType('edit');
+        setIsModalVisible(true);
+    };
+
+    const closeModal = () => {
+        setIsModalVisible(false);
+    };
+
+    const handleDelete = async (userId) => {
+        try {
+            const formData = new FormData();
+            formData.append('idAdministrador', userId);
+            const response = await fetch(`http://${ip}/coffeeshop/api/services/admin/administrador.php?action=deleteRow`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.status) {
+                Alert.alert('Éxito', data.message);
+                fetchUsuarios();
+            } else {
+                Alert.alert('Error', data.error);
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Ocurrió un error al eliminar el usuario');
+        }
+    };
+
+    const handleEdit = async () => {
+        try {
+            const formData = new FormData();
+            formData.append('idAdministrador', selectedUser.id_administrador); // Utiliza el ID del usuario seleccionado
+            formData.append('nombreAdministrador', nombre);
+            formData.append('apellidoAdministrador', apellido);
+            formData.append('correoAdministrador', correo);
+            // Agrega el resto de los campos que desees editar
+
+            const response = await fetch(`http://${ip}/coffeeshop/api/services/admin/administrador.php?action=updateRow`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.status) {
+                Alert.alert('Éxito', data.message);
+                fetchUsuarios();
+                setIsModalVisible(false);
+            } else {
+                Alert.alert('Error', data.error);
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Ocurrió un error al editar el usuario');
+        }
+    };
+
+    
     if (loading) {
         return (
             <View style={styles.loader}>
@@ -49,44 +126,32 @@ const VerScreen = () => {
                         apellido={user.apellido_administrador}
                         correo={user.correo_administrador}
                         id={user.id_administrador}
-                        handlerDelete={handlerDelete}
+                        onPress={() => openModal(user)}  // Abrir modal al presionar
+                        onDelete={() => handleDelete(user.id_administrador)}  // Eliminar al presionar
                     />
                 ))}
             </ScrollView>
+            <ModalUser
+                isVisible={isModalVisible}
+                onClose={closeModal}
+                onSubmit={handleEdit}
+                nombre={nombre}
+                setNombre={setNombre}
+                apellido={apellido}
+                setApellido={setApellido}
+                correo={correo}
+                setCorreo={setCorreo}
+                alias={alias}
+                setAlias={setAlias}
+                clave={clave}
+                setClave={setClave}
+                confirmarClave={confirmarClave}
+                setConfirmarClave={setConfirmarClave}
+                modalType={modalType}
+            />
         </SafeAreaView>
     );
-
 };
-const handlerDelete = async (id) => {
-    const urlE = `http://${ip}/coffeeshop/api/services/admin/administrador.php?action=deleteRow`;
-
-    try {
-        const response = await fetch(urlE, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ idAdministrador: id })
-        });
-
-        // Verifica si la respuesta tiene el tipo 'text/html' (HTML)
-        if (response.headers.get('content-type').includes('text/html')) {
-            throw new Error('La respuesta del servidor no es JSON válido.');
-        }
-
-        const datos = await response.json();
-        if (datos.status) {
-            Alert.alert('El usuario ha sido eliminado', datos.message);
-        } else {
-            console.log(datos);
-            Alert.alert('Error', datos.error);
-        }
-    } catch (error) {
-        console.error('Error en la solicitud:', error);
-        Alert.alert('Error', 'Hubo un problema con la solicitud.');
-    }
-};
-
 
 const styles = StyleSheet.create({
     loader: {

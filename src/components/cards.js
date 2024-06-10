@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const UserCard = ({ nombre, apellido, correo, id, handlerDelete }) => {
+const UserCard = ({ nombre, apellido, correo, id, onPress, onDelete }) => {
     return (
         <View style={styles.card}>
             <Text style={styles.label}>Nombre:</Text>
@@ -11,16 +11,12 @@ const UserCard = ({ nombre, apellido, correo, id, handlerDelete }) => {
             <Text style={styles.label}>Correo:</Text>
             <Text style={styles.text}>{correo}</Text>
             <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={() => handlerDelete(id)} style={[styles.button, { backgroundColor: 'red' }]}>
+                <TouchableOpacity onPress={onDelete} style={[styles.button, { backgroundColor: 'red' }]}>
                     <Text style={styles.buttonText}>Eliminar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]}>
+                <TouchableOpacity onPress={onPress} style={[styles.button, { backgroundColor: 'green' }]}>
                     <Text style={styles.buttonText}>Actualizar</Text>
                 </TouchableOpacity>
-            </View>
-            {/* Campo oculto para almacenar el idAdministrador */}
-            <View style={{ display: 'none' }}>
-                <Text>{id}</Text>
             </View>
         </View>
     );

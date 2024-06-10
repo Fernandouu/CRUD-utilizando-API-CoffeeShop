@@ -12,7 +12,7 @@ const RegistarScreen = () => {
     const [apellido, setApellido] = useState('');
     const [correo, setCorreo] = useState('');
     
-    let ip = `192.168.0.13`;
+    let ip = `192.168.0.2`;
     const handleCreate = async () => {
         // Lógica de inicio de sesión
 
